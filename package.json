@@ -1,0 +1,28 @@
+{
+  "name": "microservice-simulator",
+  "version": "0.1.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "start-infra": "node test/infrastructure.js",
+    "start-requests": "node test/requests.js",
+    "demo": "node test/functional/index.js",
+    "example": "node src/example.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@oas-tools/oas-telemetry": "^0.6.2",
+    "body-parser": "^2.2.0",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "node-fetch": "^3.3.2",
+    "nodemon": "^3.1.10",
+    "uuid": "^11.1.0",
+    "vm2": "^3.9.19"
+  }
+}

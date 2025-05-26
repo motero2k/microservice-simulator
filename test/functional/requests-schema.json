@@ -1,0 +1,115 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["name", "description", "target", "startDelaySeconds", "body"],
+    "additionalProperties": false,
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "target": {
+        "type": "string",
+        "format": "uri"
+      },
+      "startDelaySeconds": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "body": {
+        "type": "array",
+        "items": { "$ref": "#/definitions/action" }
+      }
+    }
+  },
+  "definitions": {
+    "action": {
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["code", "http", "wait", "log", "return"]
+        },
+        "source": {
+          "type": "string",
+          "description": "Code to execute (required for type 'code')"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL for HTTP requests (required for type 'http')"
+        },
+        "path": {
+          "type": "string",
+          "default": "/api/v1/execute"
+        },
+        "method": {
+          "type": "string",
+          "enum": ["GET", "POST", "PUT", "DELETE"],
+          "default": "POST"
+        },
+        "headers": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "body": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/action" },
+          "description": "Nested actions for HTTP request body"
+        },
+        "duration": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Duration in milliseconds (required for type 'wait')"
+        },
+        "message": {
+          "type": "string",
+          "description": "Log message (required for type 'log')"
+        },
+        "repeat": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1
+        },
+        "await": {
+          "type": "boolean",
+          "default": true
+        },
+        "data": {
+          "type": ["object", "array", "string", "number", "boolean", "null"],
+          "description": "Custom data to return (required for type 'return')"
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "return" } } },
+          "then": { "required": ["data"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "code" } } },
+          "then": { "required": ["source"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "http" } } },
+          "then": { "required": ["url"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "wait" } } },
+          "then": { "required": ["duration"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "log" } } },
+          "then": { "required": ["message"] }
+        }
+      ]
+    }
+  }
+}
