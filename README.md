@@ -1,39 +1,39 @@
 # Microservice Simulator
 
-The **Microservice Simulator** is designed to simulate a **distributed architecture** by running multiple instances that interact with each other. It works alongside other instances of itself, allowing you to define and execute **workflows** involving HTTP requests, delays, logging, and code execution. These workflows can simulate complex microservice interactions, making it a powerful tool for testing telemetry frameworks.
+The **Microservice Simulator** lets you simulate a distributed Node.js microservice architecture by running multiple service instances and orchestrating complex workflows between them. You define and execute workflows involving HTTP requests, delays, logging, and code execution using a developer-friendly JavaScript API, making it a powerful tool for testing and prototyping microservice interactions.
 
 ## Key Features
 
-- **Multi-Instance Architecture**: Designed to work with multiple instances of the simulator, enabling the simulation of distributed systems.
-- **Dynamic Workflow Simulation**: Define workflows with actions like HTTP requests, code execution, delays, and logging.
-- **Chained and Asynchronous Actions**: A single request can trigger subsequent requests or execute custom code, with support for both synchronous and asynchronous execution.
-- **Configurable via JSON**: Workflows and instances are fully configurable using JSON files.
+- **Multi-Instance Simulation**: Easily spin up multiple simulated microservices, each with its own configuration.
+- **Flexible Workflow Builder**: Compose workflows using a modern JavaScript API.
+- **Chained and Asynchronous Actions**: Workflows can trigger nested requests, custom code, and more.
+- **Code-First Configuration**: Define all workflows and microservice setups programmatically.
 
 ## How It Works
 
-The simulator processes a series of actions defined in JSON files. Each action can perform tasks such as:
+You define workflows as arrays of actions (steps), which can include:
 
-- Sending HTTP requests to other instances or services.
-- Executing custom JavaScript code in a secure sandbox.
-- Introducing delays to simulate real-world scenarios.
+- Sending HTTP requests to other simulated microservices.
+- Executing custom JavaScript code (with access to a shared context and logger).
+- Introducing delays to simulate real-world timing.
 - Logging messages for debugging or monitoring.
 - Returning custom data for further processing.
 
-By deploying multiple instances of the simulator, you can create complex, distributed workflows that mimic real-world microservice interactions.
+Each microservice instance runs as a separate Node.js process, and workflows can trigger requests between them.
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js (v16 or higher)
-- npm (Node Package Manager)
+- Node.js (v18 or higher)
+- npm
 
 ### Installation
 
 1. Clone the repository:
 
    ```bash
-   git clone https://www.github.com/motero2k/microservice-simulator.git
+   git clone https://github.com/motero2k/microservice-simulator.git
    cd microservice-simulator
    ```
 
@@ -45,78 +45,94 @@ By deploying multiple instances of the simulator, you can create complex, distri
 
 ### Running the Simulator
 
-1. Start multiple instances of the simulator using the configuration in `instances.json`:
+You can run the demo scenario (see [`examples/request-builder-demo.js`](./examples/request-builder-demo.js)):
 
-   ```bash
-   npm run demo
-   ```
-
-2. The simulator loads its configuration from `test/functional/instances.json` and `test/functional/requests.json`, then executes the workflows defined in those files.
-
-## Configuration
-
-### `instances.json`
-
-The `instances.json` file defines the configuration for each instance of the simulator. Each instance runs on a different port and can have its own environment variables. For example:
-
-```json
-[
-    { "SERVICE_NAME": "Reporter (M1)", "PORT": 3000, "LOG_LEVEL": "INFO", "OASTLM_MODULE_DISABLED": false },
-    { "SERVICE_NAME": "AuthService (M2)", "PORT": 3001, "LOG_LEVEL": "DEBUG", "OASTLM_MODULE_DISABLED": false },
-    { "SERVICE_NAME": "RegistryService (M3)", "PORT": 3002, "LOG_LEVEL": "INFO", "OASTLM_MODULE_DISABLED": false },
-    { "SERVICE_NAME": "CollectorService (M4)", "PORT": 3003, "LOG_LEVEL": "DEBUG", "OASTLM_MODULE_DISABLED": false },
-    { "SERVICE_NAME": "EmailService (M5)", "PORT": 3004, "LOG_LEVEL": "INFO", "OASTLM_MODULE_DISABLED": false }
-]
+```bash
+node examples/request-builder-demo.js
 ```
 
-Each instance can simulate a different microservice, allowing you to test interactions between them.
+Or, to start a microservice instance directly:
 
-### `requests.json`
+```bash
+npm start
+```
 
-The `requests.json` file defines the workflows to be executed by the simulator. Here's an example:
+Or, for development with auto-reload:
 
-```json
-[
-    {
-    "name": "Simple Request",
-    "description": "A simple request to demonstrate basic functionality.",
-    "target": "http://localhost:3000",
-    "startDelaySeconds": 8,
-    "body": [
-        {
-        "type": "log",
-        "message": "Starting the request"
-        },
-        {
-        "type": "wait",
-        "duration": 500
-        },
-        {
-        "type": "http",
-        "url": "http://localhost:3001/api/v1/execute",
-        "body": [
-            {
-            "type": "log",
-            "message": "Processing the request"
-            },
-            {
-            "type": "return",
-            "data": { "status": "success" }
-            }
-        ]
-        }
-    ]
-    }
-]
+```bash
+npm run dev
+```
+
+### Project Structure
+
+- `src/` - Main simulator server code.
+- `lib/request-builder.js` - Functional API for building workflows.
+- `lib/simulator.js` - Orchestrates running workflows and microservices.
+- `examples/request-builder-demo.js` - Example workflow using the builder API.
+
+## Defining Workflows
+
+You define workflows using the JavaScript builder API:
+
+```js
+import {
+  httpRequest, Microservice, log, wait, code, returnData, setContext, multi
+} from "./lib/request-builder.js";
+
+const myService = Microservice({ SERVICE_NAME: "MyService", PORT: 3000 });
+
+const workflow = httpRequest({ //first action should be httpRequest to one of the microservices
+  microservice: myService,
+  path: "/api/do-something",
+  actions: [
+    log({ message: "Starting workflow" }),
+    wait({ duration: 500 }),
+    code(() => { /* custom JS code */ }),
+    returnData({ status: "done" })
+  ]
+});
+
+runSimulation(workflow).then(result => {
+  console.log("Workflow completed with result:", result);
+}).catch(err => {
+  console.error("Workflow failed:", err);
+});
 ```
 
 ### Key Actions
 
 - **log**: Logs a message.
 - **wait**: Introduces a delay (in milliseconds).
-- **http**: Sends an HTTP request to a specified URL. In the body of the request, more actions can be defined.
-- **code**: Executes custom JavaScript code.
+- **http**: Sends an HTTP request to a specified microservice or origin. Nested actions can be defined.
+- **code**: Executes custom JavaScript code (with access to `logger` and `context`).
 - **return**: Returns custom data for further processing.
+- **set**: Sets a value in the shared context.
+- **multi**: Runs multiple actions, optionally with repeat/wait.
+
+## Example
+
+See [`examples/request-builder-demo.js`](./examples/request-builder-demo.js) for a full workflow example using the builder API.
+
+## Scripts
+
+- `npm start` - Start a microservice instance (`src/index.js`).
+- `npm run dev` - Start with auto-reload (development).
+- `npm run demo` - Run the example workflow.
+
+## Configuration
+
+### Microservice Instances
+
+Define microservice instances in code using the `Microservice` helper:
+
+```js
+const myService = Microservice({ SERVICE_NAME: "MyService", PORT: 3000 });
+```
+
+### Workflows
+
+Workflows are defined in code using the builder API (see above).  
+**JSON configuration is no longer supported or recommended.**
 
 ## Contributing
 

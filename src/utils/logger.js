@@ -19,6 +19,7 @@ function log(level, ...messages) {
 export default {
   debug: (...messages) => log('DEBUG', ...messages),
   info: (...messages) => log('INFO', ...messages),
+  log: (...messages) => log('INFO', ...messages), // Alias for info
   warn: (...messages) => log('WARN', ...messages),
   error: (...messages) => log('ERROR', ...messages),
   currentLogLevel

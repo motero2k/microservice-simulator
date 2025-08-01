@@ -6,17 +6,15 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "start-infra": "node test/infrastructure.js",
-    "start-requests": "node test/requests.js",
-    "demo": "node test/functional/index.js",
-    "example": "node src/example.js"
+    "demo": "node examples/request-builder-demo.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@oas-tools/oas-telemetry": "^0.6.2",
+    "@oas-tools/oas-telemetry": "file:../oas-telemetry/packages/lib",
+    "axios": "^1.11.0",
     "body-parser": "^2.2.0",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
